@@ -34,3 +34,5 @@
 ## Git
 
 `origin` 是 fork：`ddgmma/man-pages-translation`；`upstream` 是 `man-pages-zh/man-pages-translation`。
+
+- 提交信息统一使用中文，例如 `文档：新增 AGENTS.md 与常用命令翻译清单`；不要使用英文提交信息。
