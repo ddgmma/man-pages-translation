@@ -20,6 +20,7 @@ coreutils 的翻译主要在 [TP 网站](https://translationproject.org/team/zh_
 请先安装以下软件：
 
 * po4a
+* gettext（提供 `msgfmt`，用于校验）
 
 本仓库使用 `po4a` 自动化翻译与生成流程。`./update-all` 会刷新整棵目录树；
 日常处理单页时请改用 `./_po4a-worker`（见下文）。
@@ -27,12 +28,13 @@ coreutils 的翻译主要在 [TP 网站](https://translationproject.org/team/zh_
 如果要新增待翻译的 man 手册，按现有结构放进 `raw/` 目录即可，脚本会自动处理。
 
 注意：可以考虑对生成的 POT/PO 文件运行
-`find templates po -type f -exec sed -i '/^#$/d' {} \;`，删除空的译者注释行。
+`find templates po -type f \( -name '*.po' -o -name '*.pot' \) -exec sed -i '/^#$/d' {} +`，
+删除空的译者注释行。执行后请用 `msgfmt --check` 重新校验。
 
 # 仓库工作流（个人 fork）
 
 本仓库是 [man-pages-zh/man-pages-translation](https://github.com/man-pages-zh/man-pages-translation)
-的 fork。日常翻译在 fork 中完成，达到里程碑后再把成果导出到上游。
+的 fork。日常翻译在 fork 中完成，通过 PR 提交到上游；发布时再把成果导出到 manpages-zh。
 
 ## 远程与分支
 
@@ -41,9 +43,10 @@ coreutils 的翻译主要在 [TP 网站](https://translationproject.org/team/zh_
 | `origin` | `https://github.com/ddgmma/man-pages-translation.git` | 个人 fork，日常推送 |
 | `upstream` | `https://github.com/man-pages-zh/man-pages-translation.git` | 上游，只用于同步 |
 
-- `master` 保持可发布状态；每组页面单独开功能分支，完成后合入 `master`
-  再推送 `origin`，需要上游收录时向上游发 PR。
-- 历史分支示例：`add-ss-locate-time`、`coreutils-test-du-cut-tail`。
+- `master` 作为个人集成分支，不直接作为上游 PR 的 head 分支。
+- 每组页面从 `upstream/master` 单独开功能分支，推送 `origin` 后直接向上游发 PR。
+- 功能分支在上游合并后，再同步回本地 `master`。
+- 分支示例：`add-ss-locate-time`、`coreutils-test-du-cut-tail`。
 - 同步上游：
 
   ```sh
@@ -52,7 +55,14 @@ coreutils 的翻译主要在 [TP 网站](https://translationproject.org/team/zh_
   git merge upstream/master
   ```
 
-  若分支已经推送且不想产生合并提交，可改用 `git rebase upstream/master`。
+  功能分支同步上游时，切换到对应分支后 rebase；这会改写已推送的历史，
+  需要用 `--force-with-lease` 强制推送：
+
+  ```sh
+  git switch <功能分支>
+  git rebase upstream/master
+  git push --force-with-lease origin <功能分支>
+  ```
 
 ## 单页翻译流程
 
@@ -82,6 +92,7 @@ coreutils 的翻译主要在 [TP 网站](https://translationproject.org/team/zh_
    ```sh
    msgfmt --check -o /dev/null po/coreutils/man1/nl.1.zh_CN.po
    LC_ALL=C msgfmt --statistics -o /dev/null po/coreutils/man1/nl.1.zh_CN.po
+   git diff --check
    ```
 
 7. 提交：`po/`、`templates/`、`src/` 的对应变化放在同一个提交里，
@@ -100,7 +111,7 @@ coreutils 的翻译主要在 [TP 网站](https://translationproject.org/team/zh_
 | `./update-release` | 只根据现有 PO 重建 `src/` |
 | `PO4A_JOBS=4 ./update-all` | 覆盖默认并行度（默认 `nproc`） |
 
-注意：`./update-all` 是全树操作，在干净检出上也会产生约 50 个仅由
+注意：`./update-all` 是全树操作，在干净检出上也会产生约 47 个仅由
 `POT-Creation-Date` 和 po4a 换行引起的无关差异。迭代单页时请用
 `_po4a-worker`，不要把这类噪音混进翻译提交。
 
@@ -141,7 +152,7 @@ coreutils 的翻译主要在 [TP 网站](https://translationproject.org/team/zh_
 * util-linux
 * zstd
 
-每页进度见 `TRANSLATION-TODO.md`。
+常用命令进度见 `TRANSLATION-TODO.md`。
 
 # 其他项目
 
